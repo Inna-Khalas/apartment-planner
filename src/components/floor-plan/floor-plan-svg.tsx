@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import {
   COLUMNS,
+  REFERENCE_IMAGE,
   VIEWBOX,
   WALLS,
   WINDOWS,
@@ -192,6 +193,19 @@ export function FloorPlanSvg({
         />
 
         <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
+          {layers.reference && (
+            <image
+              href={REFERENCE_IMAGE.href}
+              x={REFERENCE_IMAGE.x}
+              y={REFERENCE_IMAGE.y}
+              width={REFERENCE_IMAGE.width}
+              height={REFERENCE_IMAGE.height}
+              opacity={REFERENCE_IMAGE.opacity}
+              preserveAspectRatio="xMidYMid meet"
+              className="pointer-events-none"
+            />
+          )}
+
           {/* Zone fills (labels drawn later, above furniture) */}
           {ZONES.map((z) => {
             const isSelected = selectedZone === z.id;
@@ -235,36 +249,36 @@ export function FloorPlanSvg({
               fill="#e8f4fa"
               stroke="#4a6a7a"
               strokeWidth={1}
+              transform={
+                w.rotation
+                  ? `rotate(${w.rotation} ${w.x + w.w / 2} ${w.y + w.h / 2})`
+                  : undefined
+              }
             />
           ))}
 
           {/* Walls */}
           {layers.walls &&
             WALLS.map((w) => {
-              if (w.id === "ext-n") {
-                // exterior drawn as thick stroke only on outline path without fill
-                return (
-                  <path
-                    key={w.id}
-                    d={w.d}
-                    fill="none"
-                    stroke="#1a1a1a"
-                    strokeWidth={5}
-                    strokeLinejoin="round"
-                  />
-                );
-              }
               const s = wallStroke(w.kind);
-              return <path key={w.id} d={w.d} {...s} strokeLinecap="square" />;
+              return (
+                <path
+                  key={w.id}
+                  d={w.d}
+                  {...s}
+                  strokeLinecap={w.kind === "exterior" ? "round" : "square"}
+                  strokeLinejoin="round"
+                />
+              );
             })}
 
           {/* Opening label */}
           {layers.labels && (
             <text
-              x={595}
-              y={490}
+              x={615}
+              y={530}
               style={{ fontFamily: "var(--font-plan)", fontSize: 11, fill: "#c45c26" }}
-              transform="rotate(-90 595 490)"
+              transform="rotate(-90 615 530)"
             >
               новый проём
             </text>
@@ -287,19 +301,23 @@ export function FloorPlanSvg({
           {layers.labels && (
             <>
               <text
-                x={685}
-                y={790}
+                x={680}
+                y={845}
                 textAnchor="middle"
-                style={{ fontFamily: "var(--font-plan)", fontSize: 12, fill: "#0f6b5c", fontWeight: 600 }}
+                style={{
+                  fontFamily: "var(--font-plan)",
+                  fontSize: 12,
+                  fill: "#0f6b5c",
+                  fontWeight: 600,
+                }}
               >
                 Главный вход (бывш. №403)
               </text>
               <text
-                x={1100}
-                y={720}
-                textAnchor="start"
+                x={1042}
+                y={825}
+                textAnchor="middle"
                 style={{ fontFamily: "var(--font-plan)", fontSize: 10, fill: "#666" }}
-                transform="rotate(90 1100 720)"
               >
                 вход 404 заделан → кладовая
               </text>
@@ -373,9 +391,14 @@ export function FloorPlanSvg({
             ))}
 
           {/* Title block */}
-          <g transform="translate(40, 790)">
+          <g transform="translate(40, 880)">
             <text
-              style={{ fontFamily: "var(--font-display)", fontSize: 16, fill: "#1a2e28", fontWeight: 700 }}
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 15,
+                fill: "#1a2e28",
+                fontWeight: 700,
+              }}
             >
               Объединение №403 + №404 · 91.01 м² без балконов
             </text>
@@ -383,7 +406,7 @@ export function FloorPlanSvg({
               y={18}
               style={{ fontFamily: "var(--font-plan)", fontSize: 11, fill: "#5a655e" }}
             >
-              Концепт-планировка для обсуждения · не рабочий проект для БТИ
+              Контур по исходным планам · концепт, не рабочий проект для БТИ
             </text>
           </g>
         </g>

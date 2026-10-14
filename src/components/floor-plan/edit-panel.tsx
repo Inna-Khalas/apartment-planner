@@ -19,6 +19,7 @@ const LAYER_LABELS: Record<LayerId, string> = {
   doors: "Двери",
   labels: "Подписи",
   walls: "Стены",
+  reference: "Референс (исходник)",
 };
 
 interface Props {
