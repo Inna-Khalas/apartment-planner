@@ -14,12 +14,12 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 
 const LAYER_LABELS: Record<LayerId, string> = {
+  plan: "Чертёж (подложка)",
   furniture: "Мебель",
   plumbing: "Сантехника",
   doors: "Двери",
   labels: "Подписи",
-  walls: "Стены",
-  reference: "Референс (исходник)",
+  walls: "Правки объединения",
 };
 
 interface Props {

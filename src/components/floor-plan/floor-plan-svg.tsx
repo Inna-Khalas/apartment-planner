@@ -3,10 +3,9 @@
 import { useCallback, useRef, useState } from "react";
 import {
   COLUMNS,
-  REFERENCE_IMAGE,
+  PLAN_BASE,
   VIEWBOX,
   WALLS,
-  WINDOWS,
   ZONES,
   type FurnitureItem,
   type GlazeChoice,
@@ -76,9 +75,8 @@ export function FloorPlanSvg({
   const onWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const factor = e.deltaY > 0 ? 0.92 : 1.08;
-    const next = Math.min(3.5, Math.max(0.45, view.scale * factor));
+    const next = Math.min(3.5, Math.max(0.4, view.scale * factor));
     const p = clientToSvg(e.clientX, e.clientY);
-    // zoom toward cursor
     const nx = view.x + p.x * view.scale - p.x * next;
     const ny = view.y + p.y * view.scale - p.y * next;
     setView({ x: nx, y: ny, scale: next });
@@ -132,30 +130,35 @@ export function FloorPlanSvg({
       case "exterior":
         return { stroke: "#1a1a1a", strokeWidth: 5, fill: "none" };
       case "loadbearing":
-        return { stroke: "#1a1a1a", strokeWidth: 7, fill: "none" };
+        return { stroke: "#1a1a1a", strokeWidth: 6, fill: "none", opacity: 0.55 };
       case "partition":
         return { stroke: "#333", strokeWidth: 3, fill: "none" };
       case "newPartition":
-        return { stroke: "#5a7a4a", strokeWidth: 2.5, fill: "none", strokeDasharray: "8 4" };
+        return {
+          stroke: "#2f6b3a",
+          strokeWidth: 3,
+          fill: "none",
+          strokeDasharray: "10 5",
+        };
       case "opening":
         return {
           stroke: "#c45c26",
-          strokeWidth: 6,
+          strokeWidth: 8,
           fill: "none",
-          strokeDasharray: "10 6",
+          strokeDasharray: "12 7",
         };
       case "demolish":
         return {
-          stroke: "#888",
-          strokeWidth: 5,
+          stroke: "#666",
+          strokeWidth: 6,
           fill: "none",
-          strokeDasharray: "4 4",
+          strokeDasharray: "5 4",
         };
     }
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-xl border border-[#c8bda8]/60 bg-[#f3efe6] shadow-inner">
+    <div className="relative h-full w-full overflow-hidden rounded-xl border border-[#c8bda8]/60 bg-[#efe9df] shadow-inner">
       <svg
         ref={svgRef}
         viewBox={`0 0 ${VIEWBOX.w} ${VIEWBOX.h}`}
@@ -165,26 +168,18 @@ export function FloorPlanSvg({
         onPointerUp={onPointerUp}
         onPointerLeave={onPointerUp}
         role="img"
-        aria-label="План объединённой квартиры 403 и 404"
+        aria-label="План объединённой квартиры 403 и 404 по исходному чертежу"
       >
         <defs>
-          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path
-              d="M 40 0 L 0 0 0 40"
-              fill="none"
-              stroke="#d4cbb8"
-              strokeWidth="0.6"
-            />
-          </pattern>
           <filter id="soft">
-            <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.15" />
+            <feDropShadow dx="0" dy="1" stdDeviation="1.2" floodOpacity="0.18" />
           </filter>
         </defs>
 
         <rect
           width={VIEWBOX.w}
           height={VIEWBOX.h}
-          fill="url(#grid)"
+          fill="#f4efe6"
           onPointerDown={(e) => {
             onSelectZone(null);
             onSelectFurniture(null);
@@ -193,20 +188,20 @@ export function FloorPlanSvg({
         />
 
         <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
-          {layers.reference && (
+          {/* Исходный чертёж — контур 1:1 */}
+          {layers.plan && (
             <image
-              href={REFERENCE_IMAGE.href}
-              x={REFERENCE_IMAGE.x}
-              y={REFERENCE_IMAGE.y}
-              width={REFERENCE_IMAGE.width}
-              height={REFERENCE_IMAGE.height}
-              opacity={REFERENCE_IMAGE.opacity}
-              preserveAspectRatio="xMidYMid meet"
+              href={PLAN_BASE.href}
+              x={PLAN_BASE.x}
+              y={PLAN_BASE.y}
+              width={PLAN_BASE.width}
+              height={PLAN_BASE.height}
+              preserveAspectRatio="none"
               className="pointer-events-none"
             />
           )}
 
-          {/* Zone fills (labels drawn later, above furniture) */}
+          {/* Зоны программы (полупрозрачные поверх чертежа) */}
           {ZONES.map((z) => {
             const isSelected = selectedZone === z.id;
             const isGlaze = glaze === z.id;
@@ -215,10 +210,9 @@ export function FloorPlanSvg({
                 <polygon
                   points={z.points}
                   fill={z.fill}
-                  stroke={isSelected ? "#0f6b5c" : "transparent"}
-                  strokeWidth={isSelected ? 3 : 0}
-                  opacity={0.92}
-                  className="cursor-pointer transition-opacity hover:opacity-100"
+                  stroke={isSelected ? "#0f6b5c" : "rgba(0,0,0,0.12)"}
+                  strokeWidth={isSelected ? 4 : 1}
+                  className="cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelectZone(z.id);
@@ -230,34 +224,15 @@ export function FloorPlanSvg({
                     points={z.points}
                     fill="none"
                     stroke="#0b6e99"
-                    strokeWidth={3}
-                    strokeDasharray="6 4"
+                    strokeWidth={4}
+                    strokeDasharray="8 5"
                   />
                 )}
               </g>
             );
           })}
 
-          {/* Windows */}
-          {WINDOWS.map((w) => (
-            <rect
-              key={w.id}
-              x={w.x}
-              y={w.y}
-              width={w.w}
-              height={w.h}
-              fill="#e8f4fa"
-              stroke="#4a6a7a"
-              strokeWidth={1}
-              transform={
-                w.rotation
-                  ? `rotate(${w.rotation} ${w.x + w.w / 2} ${w.y + w.h / 2})`
-                  : undefined
-              }
-            />
-          ))}
-
-          {/* Walls */}
+          {/* Правки объединения */}
           {layers.walls &&
             WALLS.map((w) => {
               const s = wallStroke(w.kind);
@@ -266,65 +241,72 @@ export function FloorPlanSvg({
                   key={w.id}
                   d={w.d}
                   {...s}
-                  strokeLinecap={w.kind === "exterior" ? "round" : "square"}
+                  strokeLinecap="square"
                   strokeLinejoin="round"
                 />
               );
             })}
 
-          {/* Opening label */}
           {layers.labels && (
             <text
-              x={615}
-              y={530}
-              style={{ fontFamily: "var(--font-plan)", fontSize: 11, fill: "#c45c26" }}
-              transform="rotate(-90 615 530)"
+              x={800}
+              y={880}
+              style={{
+                fontFamily: "var(--font-plan)",
+                fontSize: 16,
+                fill: "#c45c26",
+                fontWeight: 700,
+              }}
+              transform="rotate(-90 800 880)"
             >
               новый проём
             </text>
           )}
 
-          {/* Columns */}
           {COLUMNS.map((c, i) => (
             <rect
               key={i}
-              x={c.x - 10}
-              y={c.y - 10}
-              width={20}
-              height={20}
-              fill="#1a1a1a"
+              x={c.x - 9}
+              y={c.y - 9}
+              width={18}
+              height={18}
+              fill="#111"
+              opacity={0.85}
               filter="url(#soft)"
             />
           ))}
 
-          {/* Entry labels */}
           {layers.labels && (
             <>
               <text
-                x={680}
-                y={845}
+                x={900}
+                y={1235}
                 textAnchor="middle"
                 style={{
                   fontFamily: "var(--font-plan)",
-                  fontSize: 12,
+                  fontSize: 18,
                   fill: "#0f6b5c",
-                  fontWeight: 600,
+                  fontWeight: 700,
                 }}
               >
                 Главный вход (бывш. №403)
               </text>
               <text
-                x={1042}
-                y={825}
+                x={1430}
+                y={1055}
                 textAnchor="middle"
-                style={{ fontFamily: "var(--font-plan)", fontSize: 10, fill: "#666" }}
+                style={{
+                  fontFamily: "var(--font-plan)",
+                  fontSize: 14,
+                  fill: "#444",
+                  fontWeight: 600,
+                }}
               >
                 вход 404 заделан → кладовая
               </text>
             </>
           )}
 
-          {/* Furniture */}
           {furniture.map((item) => {
             if (!layers[item.layer]) return null;
             return (
@@ -350,7 +332,6 @@ export function FloorPlanSvg({
             );
           })}
 
-          {/* Zone labels above furniture so «Зона котов» etc. stay readable */}
           {layers.labels &&
             ZONES.map((z) => (
               <text
@@ -361,11 +342,11 @@ export function FloorPlanSvg({
                 className="pointer-events-none"
                 style={{
                   fontFamily: "var(--font-plan)",
-                  fontSize: z.id === "cats" ? 14 : 13,
-                  fill: "#1f2a24",
+                  fontSize: z.id === "cats" ? 18 : 16,
+                  fill: "#15231e",
                   paintOrder: "stroke",
-                  stroke: "rgba(243,239,230,0.85)",
-                  strokeWidth: 3,
+                  stroke: "rgba(255,255,255,0.9)",
+                  strokeWidth: 4,
                 }}
               >
                 <tspan x={z.centroid.x} dy="0" fontWeight={700}>
@@ -373,16 +354,16 @@ export function FloorPlanSvg({
                 </tspan>
                 <tspan
                   x={z.centroid.x}
-                  dy="16"
-                  style={{ fontSize: 12, fill: "#3d4a42", fontWeight: 600 }}
+                  dy="20"
+                  style={{ fontSize: 14, fill: "#2a3a34", fontWeight: 600 }}
                 >
                   {z.area.toFixed(2)} м²
                 </tspan>
                 {z.kind === "balcony" && glaze === z.id && (
                   <tspan
                     x={z.centroid.x}
-                    dy="14"
-                    style={{ fontSize: 10, fill: "#0b6e99" }}
+                    dy="16"
+                    style={{ fontSize: 12, fill: "#0b6e99" }}
                   >
                     остекление
                   </tspan>
@@ -390,12 +371,11 @@ export function FloorPlanSvg({
               </text>
             ))}
 
-          {/* Title block */}
-          <g transform="translate(40, 880)">
+          <g transform="translate(40, 1300)">
             <text
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: 15,
+                fontSize: 20,
                 fill: "#1a2e28",
                 fontWeight: 700,
               }}
@@ -403,10 +383,10 @@ export function FloorPlanSvg({
               Объединение №403 + №404 · 91.01 м² без балконов
             </text>
             <text
-              y={18}
-              style={{ fontFamily: "var(--font-plan)", fontSize: 11, fill: "#5a655e" }}
+              y={24}
+              style={{ fontFamily: "var(--font-plan)", fontSize: 14, fill: "#5a655e" }}
             >
-              Контур по исходным планам · концепт, не рабочий проект для БТИ
+              Контур = исходный чертёж · правки объединения поверх · концепт, не БТИ
             </text>
           </g>
         </g>
