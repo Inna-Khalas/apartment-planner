@@ -192,7 +192,7 @@ export function FloorPlanSvg({
         />
 
         <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
-          {/* Zones */}
+          {/* Zone fills (labels drawn later, above furniture) */}
           {ZONES.map((z) => {
             const isSelected = selectedZone === z.id;
             const isGlaze = glaze === z.id;
@@ -219,35 +219,6 @@ export function FloorPlanSvg({
                     strokeWidth={3}
                     strokeDasharray="6 4"
                   />
-                )}
-                {layers.labels && (
-                  <text
-                    x={z.centroid.x}
-                    y={z.centroid.y}
-                    textAnchor="middle"
-                    className="pointer-events-none"
-                    style={{ fontFamily: "var(--font-plan)", fontSize: 13, fill: "#1f2a24" }}
-                  >
-                    <tspan x={z.centroid.x} dy="0" fontWeight={600}>
-                      {labels[z.id]}
-                    </tspan>
-                    <tspan
-                      x={z.centroid.x}
-                      dy="16"
-                      style={{ fontSize: 12, fill: "#3d4a42" }}
-                    >
-                      {z.area.toFixed(2)} м²
-                    </tspan>
-                    {z.kind === "balcony" && glaze === z.id && (
-                      <tspan
-                        x={z.centroid.x}
-                        dy="14"
-                        style={{ fontSize: 10, fill: "#0b6e99" }}
-                      >
-                        остекление
-                      </tspan>
-                    )}
-                  </text>
                 )}
               </g>
             );
@@ -360,6 +331,46 @@ export function FloorPlanSvg({
               />
             );
           })}
+
+          {/* Zone labels above furniture so «Зона котов» etc. stay readable */}
+          {layers.labels &&
+            ZONES.map((z) => (
+              <text
+                key={`label-${z.id}`}
+                x={z.centroid.x}
+                y={z.centroid.y}
+                textAnchor="middle"
+                className="pointer-events-none"
+                style={{
+                  fontFamily: "var(--font-plan)",
+                  fontSize: z.id === "cats" ? 14 : 13,
+                  fill: "#1f2a24",
+                  paintOrder: "stroke",
+                  stroke: "rgba(243,239,230,0.85)",
+                  strokeWidth: 3,
+                }}
+              >
+                <tspan x={z.centroid.x} dy="0" fontWeight={700}>
+                  {labels[z.id]}
+                </tspan>
+                <tspan
+                  x={z.centroid.x}
+                  dy="16"
+                  style={{ fontSize: 12, fill: "#3d4a42", fontWeight: 600 }}
+                >
+                  {z.area.toFixed(2)} м²
+                </tspan>
+                {z.kind === "balcony" && glaze === z.id && (
+                  <tspan
+                    x={z.centroid.x}
+                    dy="14"
+                    style={{ fontSize: 10, fill: "#0b6e99" }}
+                  >
+                    остекление
+                  </tspan>
+                )}
+              </text>
+            ))}
 
           {/* Title block */}
           <g transform="translate(40, 790)">
